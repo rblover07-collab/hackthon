@@ -1,0 +1,173 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPEECH TO ISL CONVERTER</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease-out;
+    }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .word-item {
+        display: inline-block;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        margin: 0.25rem;
+        background-color: #DBEAFE; 
+        color: #1E40AF; 
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.3s;
+        transform: scale(1);
+      }
+      .word-item:hover {
+        background-color: #BFDBFE; 
+        transform: scale(1.05);
+    }
+    .word-item.active-word {
+      background-color: #2563eb; 
+      color: #fff;               
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); 
+      transform: scale(1.10);   
+    }
+    .word-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s;
+    }
+    .word-item:hover::before {
+      left: 100%;
+    }
+    
+    .image-player {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 12px;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn 0.3s ease-in-out forwards;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .gradient-animate {
+      background: linear-gradient(-45deg, #667eea, #764ba2, #6B8DD6, #8E37D7);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <nav class="bg-indigo-600 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 flex items-center">
+            <i data-feather="hand" class="w-8 h-8 mr-3"></i>
+            <span class="font-bold text-xl">BBM CONVERTER</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="relative gradient-animate overflow-hidden">
+    <div class="max-w-7xl mx-auto">
+      <div class="relative z-10 pb-12 pt-16 sm:pb-16 md:pb-20 lg:pb-24 xl:pb-28">
+        <div class="text-center px-6">
+          <h1 class="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl" data-aos="fade-up">
+            <span class="block">SPEECH TO ISL</span>
+            <span class="block text-blue-200">CONVERTER</span>
+          </h1>
+          
+          <div class="mt-8 flex justify-center space-x-4" data-aos="fade-up" data-aos-delay="400">
+            <a href="#translator" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-10 transition-all duration-300 transform hover:scale-105 shadow-lg">
+              Start Converting
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    {% block content %}
+    {% endblock %}
+  </div>
+
+  
+
+  <script>
+    AOS.init({ 
+      duration: 800, 
+      easing: 'ease-in-out', 
+      once: true,
+      offset: 100
+    });
+    
+    feather.replace();
+    
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

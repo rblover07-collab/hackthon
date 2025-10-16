@@ -1,0 +1,746 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<section id="translator" class="py-12 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="lg:text-center mb-12" data-aos="fade-up">
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-2xl p-8 shadow-xl" data-aos="fade-right">
+				<div class="flex items-center mb-6">
+					<i data-feather="edit-3" class="w-6 h-6 text-indigo-600 mr-3"></i>
+					<h3 class="text-xl font-semibold text-gray-900">INPUT TEXT OR VOICE</h3>
+				</div>
+        
+				        <form action="" method="post" class="space-y-6">
+          {% csrf_token %}
+					<div>
+						<label for="speechToText" class="block text-sm font-medium text-gray-700 mb-2">Enter text or use voice input:</label>
+						<div class="flex space-x-2 mb-2">
+							<select id="languageSelect" class="text-sm rounded-lg border-gray-300 px-3 py-2 bg-white">
+								<option value="en-US">English</option>
+								<option value="hi-IN">Hindi</option>
+								<option value="bn-IN">Bengali</option>
+								<option value="mr-IN">Marathi</option>
+								<option value="ta-IN">Tamil</option>
+								<option value="te-IN">Telugu</option>
+								<option value="kn-IN">Kannada</option>
+								<option value="pa-IN">Punjabi</option>
+								<option value="ml-IN">Malayalam</option>
+								<option value="ar-SA">Arabic</option>
+								<option value="fr-FR">French</option>
+								<option value="es-ES">Spanish</option>
+							</select>
+							<input 
+								type="text" 
+								name="sen" 
+								id="speechToText" 
+								placeholder="Type your message here..." 
+								class="flex-1 min-w-0 block w-full px-4 py-3 rounded-l-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all duration-200"
+							>
+							<button 
+								type="button" 
+								onclick="record()" 
+								id="micButton"
+								class="relative inline-flex items-center px-4 py-3 rounded-r-lg border border-l-0 border-gray-300 bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 focus:ring-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105"
+								title="Click to use voice input"
+							>
+								🎤
+							</button>
+						</div>
+										<div id="translationResult" class="mt-3 text-sm text-gray-700 bg-white p-3 rounded-lg shadow-sm hidden">
+											<strong>Translated (English):</strong>
+											<div id="translatedText" class="mt-2 text-gray-800"></div>
+										</div>
+					</div>
+          
+          <button 
+            type="submit" 
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105"
+          >
+            <i data-feather="send" class="w-4 h-4 mr-2"></i>
+            Convert to Sign Language
+          </button>
+        </form>
+
+        {% if text %}
+        <div class="mt-8 space-y-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="bg-white rounded-lg p-4 shadow-md">
+            <h4 class="text-sm font-medium text-gray-900 mb-2">Input Text:</h4>
+            <p class="text-gray-700 bg-gray-50 rounded p-3">{{ text }}</p>
+          </div>
+          
+          {% if words %}
+          <div class="bg-white rounded-lg p-4 shadow-md">
+            <h4 class="text-sm font-medium text-gray-900 mb-3">Processed Keywords:</h4>
+            <div class="flex flex-wrap gap-2">
+              {% for word in words %}
+              <span 
+                id="word-{{ forloop.counter0 }}" 
+				onclick="jumpToWord('{{ forloop.counter0 }}')" 
+                class="word-item relative overflow-hidden"
+                title="Click to view sign for '{{ word }}'"
+              >
+                {{ word }}
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 shadow-xl" data-aos="fade-left">
+        <div class="flex items-center mb-6">
+          <i data-feather="play-circle" class="w-6 h-6 text-indigo-600 mr-3"></i>
+          <h3 class="text-xl font-semibold text-gray-900">SIGN LANGUAGE</h3>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+          <div class="relative h-96 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <img 
+              id="imagePlayer" 
+              class="image-player max-w-full max-h-full object-contain hidden transition-all duration-300 transform hover:scale-105" 
+              src="" 
+              alt="Sign Language Animation"
+            >
+            <div 
+              id="noImageMessage" 
+              class="flex flex-col items-center justify-center text-gray-500 p-8 text-center hidden"
+            >
+              <i data-feather="image" class="w-16 h-16 mb-4 text-gray-300"></i>
+              <p class="text-lg font-medium">No animation available</p>
+              <p class="text-sm text-gray-400 mt-2">Select a word to view its sign</p>
+            </div>
+            <div 
+              id="loadingSpinner" 
+              class="flex flex-col items-center justify-center hidden"
+            >
+              <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+              <p class="text-indigo-600 font-medium">Loading animation...</p>
+            </div>
+          </div>
+          
+          <div class="bg-indigo-50 p-4 border-t">
+            <div class="text-center">
+              <span id="currentWordDisplay" class="text-sm font-medium text-indigo-800">
+                Select a word to view its sign
+              </span>
+              <div class="w-full bg-indigo-200 rounded-full h-2 mt-3">
+                <div id="progressIndicator" class="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex justify-center space-x-4">
+            <button 
+              onclick="previousWord()" 
+              id="prevBtn"
+              class="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-full shadow-lg transition-all duration-200 transform hover:scale-110"
+              title="Previous Word"
+            >
+              <i data-feather="skip-back" class="w-5 h-5"></i>
+            </button>
+            
+            <button 
+              onclick="playPause()" 
+              id="playPauseBtn"
+              class="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-full shadow-lg transition-all duration-200 transform hover:scale-110"
+              title="Start Animation"
+            >
+              <i data-feather="play" class="w-6 h-6"></i>
+            </button>
+            
+            <button 
+              onclick="nextWord()" 
+              id="nextBtn"
+              class="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-full shadow-lg transition-all duration-200 transform hover:scale-110"
+              title="Next Word"
+            >
+              <i data-feather="skip-forward" class="w-5 h-5"></i>
+            </button>
+          </div>
+          
+          <div class="flex justify-center space-x-3">
+            <button 
+              onclick="resetAnimation()" 
+              id="resetBtn"
+              class="flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg shadow-md transition-all duration-200 transform hover:scale-105"
+              title="Reset Animation"
+            >
+              <i data-feather="rotate-ccw" class="w-4 h-4 mr-2"></i>
+              Reset
+            </button>
+            
+            <button 
+              onclick="toggleAutoPlay()" 
+              id="autoPlayBtn"
+              class="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-lg shadow-md transition-all duration-200 transform hover:scale-105"
+              title="Toggle Auto-play"
+            >
+              <i data-feather="repeat" class="w-4 h-4 mr-2"></i>
+              Auto-play
+            </button>
+          </div>
+          
+          <div class="bg-white rounded-lg p-4 shadow-md">
+            <div class="flex items-center justify-between mb-2">
+              <label for="speedSlider" class="text-sm font-medium text-gray-700">Animation Speed:</label>
+              <span id="speedValue" class="text-sm font-medium text-indigo-600">2.0s</span>
+            </div>
+            <input 
+              type="range" 
+              id="speedSlider" 
+              min="1000" 
+              max="4000" 
+              value="2000" 
+              onchange="updateSpeed(this.value)"
+              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            >
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Fast</span>
+              <span>Normal</span>
+              <span>Slow</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #6366f1, #8b5cf6);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #6366f1, #8b5cf6);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+</style>
+
+<script>
+	var wordImages = JSON.parse('{{ word_images_json|default:"{}"|escapejs }}');
+	var currentWordIndex = 0;
+	var words = [];
+	var isPlaying = false;
+	var isAutoPlay = false;
+	var animationInterval;
+	var imageDisplayTime = 1500; 
+	var totalWords = 0;
+
+	function record(){
+		var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+		
+		if (!SpeechRecognition) {
+			showNotification('Speech Recognition is not supported by this browser. Please use Chrome, Edge, or Safari.', 'error');
+			return;
+		}
+		
+		try {
+			if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+				navigator.mediaDevices.getUserMedia({ audio: true })
+				.then(function(stream) {
+					stream.getTracks().forEach(t => t.stop());
+					startRecognition(SpeechRecognition);
+				})
+				.catch(function(err) {
+					console.warn('getUserMedia permission denied or error:', err);
+					showNotification('Microphone access was denied or not available. Please allow microphone access in your browser and try again.', 'error');
+				});
+			} else {
+				startRecognition(SpeechRecognition);
+			}
+			
+		} catch (error) {
+			console.error('Error preparing microphone:', error);
+			showNotification('Error preparing microphone: ' + (error && error.message ? error.message : error), 'error');
+		}
+	}
+
+	function startRecognition(SpeechRecognition) {
+		try {
+			var recognition = new SpeechRecognition();
+			try {
+				var langSelect = document.getElementById('languageSelect');
+				var selectedLang = (langSelect && langSelect.value) ? langSelect.value : 'en-IN';
+				recognition.lang = selectedLang;
+			} catch (e) {
+				recognition.lang = 'en-IN';
+			}
+			recognition.continuous = false;
+			recognition.interimResults = false;
+			recognition.maxAlternatives = 1;
+
+			var micButton = document.getElementById('micButton');
+			var originalText = micButton.innerHTML;
+			micButton.innerHTML = '🔴';
+			micButton.classList.add('animate-pulse', 'bg-red-500');
+			micButton.disabled = true;
+
+			recognition.onresult = function(event){
+				console.log('Speech recognition result:', event);
+				if (event.results.length > 0 && event.results[0].length > 0) {
+					var transcript = event.results[0][0].transcript;
+					document.getElementById('speechToText').value = transcript;
+					sendForTranslation(transcript, recognition.lang || null);
+					console.log('Transcript:', transcript);
+					
+					micButton.innerHTML = '✅';
+					micButton.classList.remove('animate-pulse', 'bg-red-500');
+					micButton.classList.add('bg-green-500');
+					
+					showNotification('Voice input successful!', 'success');
+					
+					setTimeout(function() {
+						resetMicButton(micButton, originalText);
+					}, 2000);
+				} else {
+					handleSpeechError('No speech detected');
+				}
+			};
+
+			recognition.onerror = function(event){
+				console.error('Speech recognition error:', event.error);
+				var errorMessage = getSpeechErrorMessage(event.error);
+				handleSpeechError(errorMessage);
+			};
+
+			recognition.onend = function(){
+				console.log('Speech recognition ended');
+				if (micButton.innerHTML === '🔴') {
+					resetMicButton(micButton, originalText);
+				}
+			};
+
+			recognition.onstart = function(){
+				console.log('Speech recognition started');
+				showNotification('Listening... Speak now!', 'info');
+			};
+
+			recognition.start();
+		} catch (error) {
+			console.error('Error initializing speech recognition:', error);
+			showNotification('Error starting speech recognition: ' + (error && error.message ? error.message : error), 'error');
+		}
+	}
+	
+	function resetMicButton(button, originalText) {
+		button.innerHTML = originalText;
+		button.classList.remove('animate-pulse', 'bg-red-500', 'bg-green-500');
+		button.disabled = false;
+	}
+	
+	function handleSpeechError(errorMessage) {
+		var micButton = document.getElementById('micButton');
+		micButton.innerHTML = '❌';
+		micButton.classList.remove('animate-pulse', 'bg-red-500');
+		micButton.classList.add('bg-red-600');
+		
+		showNotification('Speech Recognition Error: ' + errorMessage, 'error');
+		
+		setTimeout(function() {
+			resetMicButton(micButton, '🎤');
+		}, 5000);
+	}
+
+	function sendForTranslation(text, srcLang) {
+		if (!text) return;
+		fetch('/translate/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ text: text, src: srcLang })
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data && data.translated) {
+				document.getElementById('translatedText').innerText = data.translated;
+				document.getElementById('translationResult').classList.remove('hidden');
+				showNotification('Translation to English complete', 'success');
+			} else if (data && data.error) {
+				showNotification('Translation error: ' + (data.detail || data.error), 'error');
+			}
+		})
+		.catch(err => {
+			console.error('Translation request failed:', err);
+			showNotification('Translation request failed', 'error');
+		});
+	}
+	
+	function getSpeechErrorMessage(error) {
+		switch(error) {
+			case 'no-speech':
+				return 'No speech was detected. Please try again.';
+			case 'audio-capture':
+				return 'Audio capture failed. Please check your microphone.';
+			case 'not-allowed':
+				return 'Microphone access was denied. Please allow microphone access and try again.';
+			case 'network':
+				return 'Network error occurred. Please check your internet connection.';
+			case 'bad-grammar':
+				return 'Speech recognition grammar error.';
+			case 'language-not-supported':
+				return 'Language not supported.';
+			case 'service-not-allowed':
+				return 'Speech recognition service not allowed.';
+			default:
+				return 'Unknown error occurred: ' + error;
+		}
+	}
+
+	function showNotification(message, type = 'info') {
+		const existingNotification = document.querySelector('.notification');
+		if (existingNotification) {
+			existingNotification.remove();
+		}
+		
+		
+		
+		notification.classList.add(bgColor, textColor);
+		notification.innerHTML = `
+			<div class="flex items-center">
+				<span class="mr-2">${icon}</span>
+				<span>${message}</span>
+			</div>
+		`;
+		
+		document.body.appendChild(notification);
+		
+		setTimeout(() => {
+			notification.classList.remove('translate-x-full');
+		}, 100);
+		
+		setTimeout(() => {
+			notification.classList.add('translate-x-full');
+			setTimeout(() => {
+				notification.remove();
+			}, 300);
+		}, 4000);
+	}
+
+	function sendForTranslation(text, srcLang) {
+		var payload = { text: text };
+		if (srcLang) payload.src = srcLang;
+
+		fetch('/translate/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-CSRFToken': getCookie('csrftoken')
+			},
+			body: JSON.stringify(payload)
+		})
+		.then(function(resp) { return resp.json(); })
+		.then(function(data) {
+			if (data && data.translated) {
+				document.getElementById('translationResult').classList.remove('hidden');
+				document.getElementById('translatedText').innerText = data.translated;
+
+				document.getElementById('speechToText').value = data.translated;
+				var form = document.querySelector('form');
+				if (form) {
+					form.submit();
+				}
+			} else {
+				showNotification('Translation failed or returned empty result', 'error');
+			}
+		})
+		.catch(function(err){
+			console.error('Translation request failed:', err);
+			showNotification('Translation request failed: ' + err.message, 'error');
+		});
+	}
+
+	function getCookie(name) {
+		var cookieValue = null;
+		if (document.cookie && document.cookie !== '') {
+			var cookies = document.cookie.split(';');
+			for (var i = 0; i < cookies.length; i++) {
+				var cookie = cookies[i].trim();
+				if (cookie.substring(0, name.length + 1) === (name + '=')) {
+					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+					break;
+				}
+			}
+		}
+		return cookieValue;
+	}
+
+	function initializeWords() {
+		var wordElements = document.querySelectorAll(".word-item");
+		words = [];
+		wordElements.forEach(function(element) {
+			words.push(element.textContent.trim());
+		});
+		totalWords = words.length;
+		updateProgressBar();
+	}
+
+	function resetWordHighlights() {
+		var wordElements = document.querySelectorAll(".word-item");
+		wordElements.forEach(function(element) {
+			element.classList.remove('active-word');
+		});
+	}
+
+	function highlightCurrentWord() {
+		resetWordHighlights();
+		if(currentWordIndex < words.length) {
+			var wordElement = document.getElementById("word-" + currentWordIndex);
+			if(wordElement) {
+				wordElement.classList.add('active-word');
+				wordElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			}
+		}
+	}
+
+	function jumpToWord(wordIndex) {
+		if(wordIndex >= 0 && wordIndex < words.length) {
+			currentWordIndex = wordIndex;
+			displayCurrentImage();
+			highlightCurrentWord();
+			updateProgressBar();
+		}
+	}
+
+	function updateProgressBar() {
+		var progressBar = document.getElementById("progressIndicator");
+		if(totalWords > 0) {
+			var progress = ((currentWordIndex + 1) / totalWords) * 100;
+			progressBar.style.width = progress + "%";
+		}
+	}
+
+	function displayCurrentImage() {
+		if(currentWordIndex >= words.length) {
+			stopAnimation();
+			return;
+		}
+
+		var currentWord = words[currentWordIndex];
+		var imagePlayer = document.getElementById("imagePlayer");
+		var noImageMessage = document.getElementById("noImageMessage");
+		var currentWordDisplay = document.getElementById("currentWordDisplay");
+		var loadingSpinner = document.getElementById("loadingSpinner");
+
+		currentWordDisplay.innerHTML = `Showing sign for: <strong>${currentWord}</strong> (${currentWordIndex + 1}/${totalWords})`;
+
+		if(wordImages[currentWord] && wordImages[currentWord].length > 0) {
+			var imagePath = "/static/" + wordImages[currentWord][0]; 
+			
+			loadingSpinner.style.display = "flex";
+			imagePlayer.style.display = "none";
+			noImageMessage.style.display = "none";
+			
+			var newImg = new Image();
+			newImg.onload = function() {
+				loadingSpinner.style.display = "none";
+				imagePlayer.src = imagePath;
+				imagePlayer.style.display = "block";
+				imagePlayer.classList.add('fade-in');
+				
+				setTimeout(() => {
+					imagePlayer.classList.remove('fade-in');
+				}, 400);
+			};
+			newImg.onerror = function() {
+				loadingSpinner.style.display = "none";
+				imagePlayer.style.display = "none";
+				noImageMessage.style.display = "flex";
+				noImageMessage.innerHTML = `
+					<i data-feather="alert-circle" class="w-16 h-16 mb-4 text-red-300"></i>
+					<p class="text-lg font-medium text-red-500">Image failed to load</p>
+				`;
+				feather.replace();
+			};
+			newImg.src = imagePath;
+		} else {
+			loadingSpinner.style.display = "none";
+			imagePlayer.style.display = "none";
+			noImageMessage.style.display = "flex";
+			noImageMessage.innerHTML = `
+				<i data-feather="image" class="w-16 h-16 mb-4 text-gray-300"></i>
+				<p class="text-lg font-medium">No sign available</p>
+				<p class="text-sm text-gray-400 mt-2">for '${currentWord}'</p>
+			`;
+			feather.replace();
+		}
+
+		highlightCurrentWord();
+		updateProgressBar();
+	}
+
+	function nextFrame() {
+		if(currentWordIndex >= words.length - 1) {
+			if(isAutoPlay) {
+				currentWordIndex = 0;
+			} else {
+				stopAnimation();
+				return;
+			}
+		} else {
+			currentWordIndex++;
+		}
+
+		displayCurrentImage();
+	}
+
+	function startAnimation() {
+		if(words.length === 0) {
+			initializeWords();
+		}
+
+		if(words.length === 0) {
+			showNotification('No words to animate! Please enter some text first.', 'error');
+			return;
+		}
+
+		isPlaying = true;
+		displayCurrentImage();
+		animationInterval = setInterval(nextFrame, imageDisplayTime);
+		updatePlayButton();
+	}
+
+	function stopAnimation() {
+		isPlaying = false;
+		if(animationInterval) {
+			clearInterval(animationInterval);
+			animationInterval = null;
+		}
+		updatePlayButton();
+	}
+
+	function resetAnimation() {
+		stopAnimation();
+		currentWordIndex = 0;
+		document.getElementById("imagePlayer").src = "";
+		document.getElementById("imagePlayer").style.display = "none";
+		document.getElementById("noImageMessage").style.display = "flex";
+		document.getElementById("currentWordDisplay").innerHTML = "Select a word to view its sign";
+		resetWordHighlights();
+		updateProgressBar();
+	}
+
+	function updatePlayButton() {
+		var playBtn = document.getElementById("playPauseBtn");
+		var playIcon = playBtn.querySelector('i');
+		if(isPlaying) {
+			playIcon.setAttribute('data-feather', 'pause');
+			playBtn.title = "Pause Animation";
+			playBtn.classList.add('animate-pulse');
+		} else {
+			playIcon.setAttribute('data-feather', 'play');
+			playBtn.title = "Start Animation";
+			playBtn.classList.remove('animate-pulse');
+		}
+		feather.replace();
+	}
+
+	function playPause() {
+		if(words.length === 0) {
+			initializeWords();
+		}
+		
+		if(isPlaying) {
+			stopAnimation();
+		} else {
+			startAnimation();
+		}
+	}
+	
+	function previousWord() {
+		if(words.length === 0) {
+			initializeWords();
+		}
+		
+		if(currentWordIndex > 0) {
+			currentWordIndex--;
+			displayCurrentImage();
+		}
+	}
+	
+	function nextWord() {
+		if(words.length === 0) {
+			initializeWords();
+		}
+		
+		if(currentWordIndex < words.length - 1) {
+			currentWordIndex++;
+			displayCurrentImage();
+		}
+	}
+	
+	function toggleAutoPlay() {
+		isAutoPlay = !isAutoPlay;
+		var autoPlayBtn = document.getElementById("autoPlayBtn");
+		if(isAutoPlay) {
+			autoPlayBtn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+			autoPlayBtn.classList.remove('bg-gradient-to-r', 'from-purple-500', 'to-indigo-500', 'hover:from-purple-600', 'hover:to-indigo-600');
+			autoPlayBtn.title = "Auto-play ON - Click to disable";
+		} else {
+			autoPlayBtn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+			autoPlayBtn.classList.add('bg-gradient-to-r', 'from-purple-500', 'to-indigo-500', 'hover:from-purple-600', 'hover:to-indigo-600');
+			autoPlayBtn.title = "Auto-play OFF - Click to enable";
+		}
+	}
+	
+	function updateSpeed(value) {
+		imageDisplayTime = parseInt(value);
+		document.getElementById("speedValue").innerHTML = (value/1000).toFixed(1) + "s";
+		
+		if(isPlaying) {
+			stopAnimation();
+			startAnimation();
+		}
+	}
+
+	window.onload = function() {
+		setTimeout(function() {
+			initializeWords();
+			if(words.length > 0) {
+				currentWordIndex = 0;
+				displayCurrentImage();
+			} else {
+				document.getElementById("noImageMessage").style.display = "flex";
+			}
+		}, 300);
+	};
+	document.addEventListener('keydown', function(e) {
+		if(words.length === 0) return;
+		
+		switch(e.key) {
+			case 'ArrowLeft':
+				previousWord();
+				break;
+			case 'ArrowRight':
+				nextWord();
+				break;
+			case ' ': 
+				e.preventDefault();
+				playPause();
+				break;
+			case 'Home':
+				resetAnimation();
+				break;
+		}
+	});
+</script>
+{% endblock %}
